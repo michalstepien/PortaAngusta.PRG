@@ -1,0 +1,24 @@
+{
+  "name": "portaangusta.prg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "convert": "shp2json --encoding=windows-1250 --out ./results.json ./PRG_PunktyAdresowe_POLSKA.shp ",
+    "downloadshp": "download https://opendata.geoportal.gov.pl/prg/adresy/PunktyAdresowe/POLSKA.zip > download.zip",
+    "extract": "extract-zip download.zip",
+    "clear": "del *.zip *.dbf *.prj *.shp *.shx"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^7.5.1",
+    "download-cli": "^1.1.1",
+    "extract-zip": "^1.6.7",
+    "g": "^2.0.1",
+    "geojson-stream": "^0.1.0",
+    "proj4": "^2.6.0",
+    "shapefile": "^0.6.6",
+    "stream-dbf": "^0.3.0"
+  }
+}
