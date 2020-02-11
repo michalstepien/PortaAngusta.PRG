@@ -6,15 +6,13 @@ const fs = require('fs');
 const { Client } = require('@elastic/elasticsearch');
 const client = new Client({ node: 'http://localhost:9200' });
 
-
-let resultsToSave = [];
-let i = 0;
-
 (async () => {
-
-  await client.indices.create({ index: 'prgdb' });
+  let resultsToSave = [];
+  let i = 0;
+  
+  await client.indices.create({ index: 'prgdb2' });
   client.indices.putMapping({
-    index: 'prgdb',
+    index: 'prgdb2',
     body: {
       properties: {
         TERYT: { type: 'text' },
@@ -32,6 +30,7 @@ let i = 0;
   fs
     .createReadStream(`results.json`)
     .pipe(geojsonStream.parse(async (building, index) => {
+      
       const ret = {
         TERYT: building.properties.TERYT,
         PNA: building.properties.PNA,
@@ -43,35 +42,50 @@ let i = 0;
         COORD: proj4(projection, projectionOut, building.geometry.coordinates)
       };
       resultsToSave.push(ret);
-      if (resultsToSave.length == 5000) {
-        i = i + 5000;
-        console.log('saving chunk...', i);
+      
+      if (resultsToSave.length == 500) { 
+        i = i + 1;
         const body = resultsToSave.flatMap(doc => [{ index: { _index: 'prgdb' } }, doc]);
         try {
           const { body: bulkResponse } = await client.bulk({ refresh: true, body });
-          if (bulkResponse.errors) {
-            const erroredDocuments = []
-            bulkResponse.items.forEach((action, i) => {
-              console.log(action);
-            })
-            //console.log(erroredDocuments)
-          }
+          console.log('saving chunk...', index + 1, i * 500);
+          if (bulkResponse.errors) { console.err(err); return; }
+ 
+          let errorCount = 0;
+          bulkResponse.items.forEach(item => {
+            if(item.index._version !== 1) {
+              console.log('Not version !', item.index._version);
+            }
+            if(item.index.result !== 'created') {
+              console.log('Not created !', item.index.result);
+            }
+            if(item.index.status !== 201) {
+              console.log('Not status 201!', item.index.status);
+            }
+            
+            if (item.index && item.index.error) {
+              console.log(++errorCount, item.index.error);
+            }
+          });
+          // if(i == 10000) {
+          //   return false;
+          // }
         } catch (error) {
           console.log(error);
         }
-
         resultsToSave = [];
       }
     })).on("end", async () => {
-      console.log('End mapping...', resultsToSave.length);
-      let i;
-      let j;
-      const chunk = 5000;
-      for (i = 0, j = resultsToSave.length; i < j; i += chunk) {
-        console.log('saving chunk...')
-        const temparray = resultsToSave.slice(i, i + chunk);
-        const body = temparray.flatMap(doc => [{ index: { _index: 'prgdb' } }, doc]);
-        await client.bulk({ refresh: true, body });
+      console.log('End mapping... . Saving last elements: ', resultsToSave.length);
+      const body = resultsToSave.flatMap(doc => [{ index: { _index: 'prgdb' } }, doc]);
+      try {
+        const { body: bulkResponse } = await client.bulk({ refresh: true, body });
+        if (bulkResponse.errors) {
+          console.log(JSON.stringify(bulkResponse, null, ' '));
+        }
+      } catch (error) {
+        console.log(error);
+        console.log(body);
       }
       console.log('End saving...', resultsToSave.length);
     });
