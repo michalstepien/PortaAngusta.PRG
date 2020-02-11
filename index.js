@@ -10,9 +10,9 @@ const client = new Client({ node: 'http://localhost:9200' });
   let resultsToSave = [];
   let i = 0;
   
-  await client.indices.create({ index: 'prgdb2' });
+  await client.indices.create({ index: 'prgdb' });
   client.indices.putMapping({
-    index: 'prgdb2',
+    index: 'prgdb',
     body: {
       properties: {
         TERYT: { type: 'text' },
@@ -27,10 +27,12 @@ const client = new Client({ node: 'http://localhost:9200' });
     }
   });
 
-  fs
+  const rs = fs
     .createReadStream(`results.json`)
-    .pipe(geojsonStream.parse(async (building, index) => {
-      
+    .pipe(geojsonStream.parse());
+
+    rs.on("data", async (building) => {
+      rs.pause();
       const ret = {
         TERYT: building.properties.TERYT,
         PNA: building.properties.PNA,
@@ -48,7 +50,7 @@ const client = new Client({ node: 'http://localhost:9200' });
         const body = resultsToSave.flatMap(doc => [{ index: { _index: 'prgdb' } }, doc]);
         try {
           const { body: bulkResponse } = await client.bulk({ refresh: true, body });
-          console.log('saving chunk...', index + 1, i * 500);
+          console.log('saving chunk...', i * 500);
           if (bulkResponse.errors) { console.err(err); return; }
  
           let errorCount = 0;
@@ -67,15 +69,15 @@ const client = new Client({ node: 'http://localhost:9200' });
               console.log(++errorCount, item.index.error);
             }
           });
-          // if(i == 10000) {
-          //   return false;
-          // }
         } catch (error) {
           console.log(error);
         }
         resultsToSave = [];
       }
-    })).on("end", async () => {
+      rs.resume();
+    });
+    
+    rs.on("end", async () => {
       console.log('End mapping... . Saving last elements: ', resultsToSave.length);
       const body = resultsToSave.flatMap(doc => [{ index: { _index: 'prgdb' } }, doc]);
       try {
