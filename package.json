@@ -2,23 +2,42 @@
   "name": "portaangusta.prg",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "convert": "shp2json --encoding=windows-1250 --out ./results.json ./PRG_PunktyAdresowe_POLSKA.shp ",
     "downloadshp": "download https://opendata.geoportal.gov.pl/prg/adresy/PunktyAdresowe/POLSKA.zip > download.zip",
     "extract": "extract-zip download.zip",
-    "clear": "del *.zip *.dbf *.prj *.shp *.shx"
+    "clear": "del *.zip *.dbf *.prj *.shp *.shx",
+    "start": "babel-node index.js",
+    "start:dev": "nodemon"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@elastic/elasticsearch": "^7.5.1",
+    "@nestjs/common": "^6.11.7",
+    "@nestjs/core": "^6.11.7",
+    "@nestjs/elasticsearch": "^7.0.0",
+    "@nestjs/platform-express": "^6.7.2",
     "download-cli": "^1.1.1",
     "extract-zip": "^1.6.7",
     "g": "^2.0.1",
     "geojson-stream": "^0.1.0",
     "proj4": "^2.6.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^6.5.4",
     "shapefile": "^0.6.6",
     "stream-dbf": "^0.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.2",
+    "@babel/node": "^7.6.2",
+    "@babel/plugin-proposal-decorators": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.6.2",
+    "@babel/preset-env": "^7.6.2",
+    "@babel/register": "^7.6.2",
+    "@babel/runtime": "^7.6.2",
+    "babel-plugin-parameter-decorator": "^1.0.15",
+    "nodemon": "^1.19.2",
+    "supertest": "^4.0.2"
   }
 }
